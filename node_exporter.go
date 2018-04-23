@@ -25,6 +25,8 @@ import (
 	"github.com/prometheus/common/version"
 	"github.com/prometheus/node_exporter/collector"
 	"gopkg.in/alecthomas/kingpin.v2"
+	"os"
+	"net"
 )
 
 func init() {
@@ -70,8 +72,10 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	var (
-		listenAddress = kingpin.Flag("web.listen-address", "Address on which to expose metrics and web interface.").Default(":9100").String()
-		metricsPath   = kingpin.Flag("web.telemetry-path", "Path under which to expose metrics.").Default("/metrics").String()
+		listenAddress = kingpin.Flag("unix-sock", "Address on which to expose metrics and unix sock access.").
+			Default("/dev/shm/node_exporter.sock").String()
+		metricsPath   = kingpin.Flag("web.telemetry-path", "Path under which to expose metrics.").
+			Default("/metrics").String()
 	)
 
 	log.AddFlags(kingpin.CommandLine)
@@ -97,20 +101,25 @@ func main() {
 		log.Infof(" - %s", n)
 	}
 
-	http.HandleFunc(*metricsPath, handler)
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	mux := http.NewServeMux()
+	mux.HandleFunc(*metricsPath, handler)
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(`<html>
-			<head><title>Node Exporter</title></head>
-			<body>
-			<h1>Node Exporter</h1>
-			<p><a href="` + *metricsPath + `">Metrics</a></p>
-			</body>
-			</html>`))
+                        <head><title>Node Exporter</title></head>
+                        <body>
+                        <h1>Node Exporter</h1>
+                        <p><a href="` + *metricsPath + `">Metrics</a></p>
+                        </body>
+                        </html>`))
 	})
-
-	log.Infoln("Listening on", *listenAddress)
-	err = http.ListenAndServe(*listenAddress, nil)
-	if err != nil {
-		log.Fatal(err)
+	server := http.Server{
+		Handler: mux, // http.DefaultServeMux,
 	}
+	os.Remove(*listenAddress)
+
+	listener, err := net.Listen("unix", *listenAddress)
+	if err != nil {
+		panic(err)
+	}
+	server.Serve(listener)
 }
