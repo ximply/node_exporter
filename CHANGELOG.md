@@ -1,13 +1,68 @@
 ## master / unreleased
 
-**Breaking changes**
+### **Breaking changes**
 
-* [CHANGE]
-* [FEATURE]
-* [ENHANCEMENT]
+### Changes
+
 * [BUGFIX]
+* [BUGFIX] Add fallback for missing /proc/1/mounts #1172
+* [CHANGE] Add TCPSynRetrans to netstat default filter #1143
+* [CHANGE] Add a limit to the number of in-flight requests #1166
+* [ENHANCEMENT] Add Infiniband counters #1120
+* [FEATURE] Add a flag to disable exporter metrics #1148
 
-## 0.16.0-rc.1 / 2018-04-04
+## 0.17.0 / 2018-11-30
+
+Build note: Linux builds can now be built without CGO.
+
+### **Breaking changes**
+
+supvervisord collector reports `start_time_seconds` rather than `uptime` #952
+
+The wifi collector is disabled by default due to suspected caching issues and goroutine leaks.
+* https://github.com/prometheus/node_exporter/issues/870
+* https://github.com/prometheus/node_exporter/issues/1008
+
+Darwin meminfo metrics have been renamed to match Prometheus conventions. #1060
+
+### Changes
+
+* [CHANGE] Filter out non-installed units when collecting all systemd units #1011
+* [CHANGE] `service_restart_total` and `socket_refused_connections_total` will not be reported if you're running an older version of systemd
+* [CHANGE] Use /proc/mounts instead of statfs(2) for ro state #1002
+* [CHANGE] collector/timex: remove cgo dependency #1079
+* [CHANGE] filesystem: Ignore Docker netns mounts #1047
+* [CHANGE] Ignore additional virtual filesystems #1104
+* [FEATURE] Add netclass collector #851
+* [FEATURE] Add processes collector #950
+* [FEATURE] Collect start time for systemd units #952
+* [FEATURE] Add socket unit stats to systemd collector #968
+* [FEATURE] Collect NRestarts property for systemd service units #992
+* [FEATURE] Collect NRefused property for systemd socket units (available as of systemd v239) #995
+* [FEATURE] Allow removal of rootfs prefix for run in docker #1058
+* [ENHANCEMENT] Support for octal characters in mountpoints #954
+* [ENHANCEMENT] Update wifi stats to support multiple stations #980
+* [ENHANCEMENT] Handle stuck NFS mounts #997
+* [ENHANCEMENT] infiniband: Handle iWARP RDMA modules N/A #974
+* [ENHANCEMENT] Update diskstats for linux kernel 4.19 #1109
+
+* [BUGFIX] Fix FreeBSD CPU temp #965
+* [BUGFIX] Fix goroutine leak in supervisord collector #978
+* [BUGFIX] Fix mdadm collector issues #985
+* [BUGFIX] Fix ntp collector thread safety #1014
+* [BUGFIX] Systemd units will not be ignored if you're running older versions of systemd #1039
+* [BUGFIX] Handle vanishing PIDs #1043
+* [BUGFIX] Correctly cast Darwin memory info #1060
+* [BUGFIX] Filter systemd units in Go for compatibility with older versions #1083
+* [BUGFIX] Update cpu collector for OpenBSD 6.4 #1094
+* [BUGFIX] Fix typo on HELP of `read_time_seconds_total` #1057
+* [BUGFIX] collector/diskstats: don't fail if there are extra stats #1125
+* [BUGFIX] collector/hwmon\_linux: handle temperature sensor file #1123
+* [BUGFIX] collector/filesystem: add bounds check #1133
+* [BUGFIX] Fix dragonfly's CPU counting frequency #1140
+* [BUGFIX] Add fallback for missing /proc/1/mounts #1172
+
+## 0.16.0 / 2018-05-15
 
 **Breaking changes**
 
@@ -16,10 +71,11 @@ This release contains major breaking changes to metric names.  Many metrics have
 * Many counter metrics have been renamed to include `_total`.
 * Many metrics have been renamed/modified to include base units, for example `node_cpu` is now `node_cpu_seconds_total`.
 
-In order to help with backwards compatibility, a `metric_relabel_config` is being worked on to allow for easier transition of metric names.  See: https://github.com/prometheus/node_exporter/issues/830
+In order to help with the transition we have an [upgrade guide](docs/V0_16_UPGRADE_GUIDE.md).
 
 Other breaking changes:
 * The megacli collector has been removed, is now replaced by the storcli.py textfile helper.
+* The gmond collector has been removed.
 * The textfile collector will now treat timestamps as errors.
 
 * [CHANGE] Split out guest cpu metrics on Linux. #744
@@ -30,11 +86,13 @@ Other breaking changes:
 * [CHANGE] Cleanup NFS metrics #834
 * [CHANGE] Only report core throttles per core, not per cpu #836
 * [CHANGE] Treat custom textfile metric timestamps as errors #769
-* [CHANGE] Drop exec_ in boot_timestamp_seconds on *bsd #839
 * [CHANGE] Use lowercase cpu label name in interrupts #849
 * [CHANGE] Enable bonding collector by default. #872
 * [CHANGE] Greatly reduce the metrics vmstat returns by default. #874
 * [CHANGE] Greatly trim what netstat collector exposes by default #876
+* [CHANGE] Drop `exec_` prefix and move `node_boot_time_seconds` from `exec` to new `boottime` collector and enable for Darwin/Dragonfly/FreeBSD/NetBSD/OpenBSD. #839, #901
+* [CHANGE] Remove depreated gmond collector #852
+* [CHANGE] align Darwin disk stat names with Linux #930
 * [FEATURE] Add `collect[]` parameter #699
 * [FEATURE] Add text collector conversion for ipmitool output. #746
 * [FEATURE] Add openbsd meminfo #724
@@ -56,6 +114,10 @@ Other breaking changes:
 * [BUGFIX] smartmon: Escape double quotes in device model family #772
 * [BUGFIX] Fix log level regression in #533 #815
 * [BUGFIX] Correct the ClocksPerSec scaling factor on Darwin #846
+* [BUGFIX] Count core throttles per core and per package #871
+* [BUGFIX] Fix netdev collector for linux #890 #910
+* [BUGFIX] Fix memory corruption when number of filesystems > 16 on FreeBSD #900
+* [BUGFIX] Fix parsing of interface aliases in netdev linux #904
 
 ## 0.15.2 / 2017-12-06
 

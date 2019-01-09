@@ -36,6 +36,7 @@ enabled_collectors=$(cat << COLLECTORS
   wifi
   xfs
   zfs
+  processes
 COLLECTORS
 )
 disabled_collectors=$(cat << COLLECTORS
@@ -55,7 +56,7 @@ skip_re="^(go_|node_exporter_build_info|node_scrape_collector_duration_seconds|p
 arch="$(uname -m)"
 
 case "${arch}" in
-  ppc64le) fixture='collector/fixtures/e2e-ppc64le-output.txt' ;;
+  aarch64|ppc64le) fixture='collector/fixtures/e2e-64k-page-output.txt' ;;
   *) fixture='collector/fixtures/e2e-output.txt' ;;
 esac
 
@@ -97,6 +98,7 @@ fi
   --collector.textfile.directory="collector/fixtures/textfile/two_metric_files/" \
   --collector.wifi.fixtures="collector/fixtures/wifi" \
   --collector.qdisc.fixtures="collector/fixtures/qdisc/" \
+  --collector.netclass.ignored-devices="(bond0|dmz|int)" \
   --web.listen-address "127.0.0.1:${port}" \
   --log.level="debug" > "${tmpdir}/node_exporter.log" 2>&1 &
 

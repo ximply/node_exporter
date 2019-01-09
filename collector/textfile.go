@@ -22,7 +22,6 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -34,7 +33,6 @@ import (
 
 var (
 	textFileDirectory = kingpin.Flag("collector.textfile.directory", "Directory to read text files with metrics from.").Default("").String()
-	textFileAddOnce   sync.Once
 	mtimeDesc         = prometheus.NewDesc(
 		"node_textfile_mtime_seconds",
 		"Unixtime mtime of textfiles successfully read.",
@@ -195,7 +193,6 @@ func (c *textFileCollector) Update(ch chan<- prometheus.Metric) error {
 		error = 1.0
 	}
 
-fileLoop:
 	for _, f := range files {
 		if !strings.HasSuffix(f.Name(), ".prom") {
 			continue
@@ -215,14 +212,13 @@ fileLoop:
 			error = 1.0
 			continue
 		}
+		if hasTimestamps(parsedFamilies) {
+			log.Errorf("Textfile %q contains unsupported client-side timestamps, skipping entire file", path)
+			error = 1.0
+			continue
+		}
+
 		for _, mf := range parsedFamilies {
-			for _, m := range mf.Metric {
-				if m.TimestampMs != nil {
-					log.Errorf("Textfile %q contains unsupported client-side timestamps, skipping entire file", path)
-					error = 1.0
-					continue fileLoop
-				}
-			}
 			if mf.Help == nil {
 				help := fmt.Sprintf("Metric read from %s", path)
 				mf.Help = &help
@@ -250,4 +246,16 @@ fileLoop:
 		prometheus.GaugeValue, error,
 	)
 	return nil
+}
+
+// hasTimestamps returns true when metrics contain unsupported timestamps.
+func hasTimestamps(parsedFamilies map[string]*dto.MetricFamily) bool {
+	for _, mf := range parsedFamilies {
+		for _, m := range mf.Metric {
+			if m.TimestampMs != nil {
+				return true
+			}
+		}
+	}
+	return false
 }

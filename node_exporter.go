@@ -15,8 +15,10 @@ package main
 
 import (
 	"fmt"
+	"net"
 	"net/http"
 	_ "net/http/pprof"
+	"os"
 	"sort"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -25,8 +27,6 @@ import (
 	"github.com/prometheus/common/version"
 	"github.com/prometheus/node_exporter/collector"
 	"gopkg.in/alecthomas/kingpin.v2"
-	"os"
-	"net"
 )
 
 func init() {
@@ -74,8 +74,7 @@ func main() {
 	var (
 		listenAddress = kingpin.Flag("unix-sock", "Address on which to expose metrics and unix sock access.").
 			Default("/dev/shm/node_exporter.sock").String()
-		metricsPath   = kingpin.Flag("web.telemetry-path", "Path under which to expose metrics.").
-			Default("/metrics").String()
+		metricsPath   = kingpin.Flag("web.telemetry-path", "Path under which to expose metrics.").Default("/metrics").String()
 	)
 
 	log.AddFlags(kingpin.CommandLine)
